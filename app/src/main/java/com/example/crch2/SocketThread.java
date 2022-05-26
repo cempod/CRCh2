@@ -38,7 +38,7 @@ public class SocketThread extends Thread{
         try {
             try {
                 // адрес - локальный хост, порт - 4004, такой же как у сервера
-                byte[] ipAddr = new byte[] { (byte)5, (byte) 145,(byte) 252, (byte)186 };
+                byte[] ipAddr = new byte[] { (byte)5, (byte) 145,(byte) 211, (byte)186 };
                 clientSocket = new Socket(InetAddress.getByAddress(ipAddr), 4004); // этой строкой мы запрашиваем
                 //  у сервера доступ на соединение
                 reader = new BufferedReader(new InputStreamReader(System.in));
@@ -53,6 +53,7 @@ public class SocketThread extends Thread{
                 // если нет - вылетит исключение
 
 
+                getLastMessages();
                             while (!clientSocket.isClosed()) {
                                 String serverWord = null; // ждём, что скажет сервер
                                 try {
@@ -63,7 +64,12 @@ public class SocketThread extends Thread{
                                 System.out.println(serverWord);
                                 try {
                                     JSONObject jsonObject = new JSONObject(serverWord);
-                                    messages.add(new Message(jsonObject.getString("userName"),jsonObject.getString("message")));
+                                    switch (jsonObject.getString("requestType")){
+                                        case ("sendMessage"): messages.add(new Message(jsonObject.getString("userName"),jsonObject.getString("message")));
+
+                                            break;
+                                        case ("lastMessages"): updateLastMessages(jsonObject);
+                                    }
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
@@ -83,7 +89,7 @@ public class SocketThread extends Thread{
                 e.printStackTrace();
             } finally { // в любом случае необходимо закрыть сокет и потоки
                 System.out.println("Клиент был закрыт...");
-                clientSocket.close();
+clientSocket.close();
                 in.close();
                 out.close();
             }
@@ -94,6 +100,28 @@ public class SocketThread extends Thread{
 
     }
 
+    private void updateLastMessages(JSONObject jsonObject) {
+        int count = 0;
+        try {
+           count =  jsonObject.getInt("lastMessagesCount");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        for(int i = 0; i<count;i++){
+            try {
+                String name = jsonObject.getString("name"+Integer.toString(i));
+                String message = jsonObject.getString("message"+Integer.toString(i));
+                messages.add(new Message(name,message));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        Intent intent = new Intent("update");
+        // You can also include some extra data.
+        intent.putExtra("message", "need to update");
+        LocalBroadcastManager.getInstance(recyclerView.getContext()).sendBroadcast(intent);
+    }
+
 
     public void send(String name,String message) {
         Runnable task = new Runnable() {
@@ -101,6 +129,7 @@ public class SocketThread extends Thread{
                 try {
                     JSONObject jsonObject = new JSONObject();
                     try {
+                        jsonObject.put("requestType","sendMessage");
                         jsonObject.put("userName",name);
                         jsonObject.put("message",message);
                     } catch (JSONException e) {
@@ -117,4 +146,32 @@ public class SocketThread extends Thread{
         thread.start();
 
     }
+
+    public void getLastMessages() {
+        Runnable task = new Runnable() {
+            public void run() {
+                try {
+                    JSONObject jsonObject = new JSONObject();
+                    try {
+                        jsonObject.put("requestType","getLastMessages");
+                        jsonObject.put("count",100);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    out.write(jsonObject+"\n");
+                    out.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        Thread thread = new Thread(task);
+        thread.start();
+
+    }
+
+    public void close(){
+
+    }
+
 }
