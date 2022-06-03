@@ -28,11 +28,13 @@ public class SocketThread extends Thread{
     private RecyclerView recyclerView;
     private ArrayList<Message> messages;
     private int pingTimer ;
+    private ConnectionManager connectionManager;
 
-    public  SocketThread(RecyclerView recyclerView, ArrayList<com.example.crch2.Message> messages){
+    public  SocketThread(RecyclerView recyclerView, ArrayList<com.example.crch2.Message> messages, ConnectionManager connectionManager){
         this.messages = messages;
         this.recyclerView = recyclerView;
         this.pingTimer = 0;
+        this.connectionManager = connectionManager;
     }
 
     @Override
@@ -51,6 +53,7 @@ public class SocketThread extends Thread{
                 out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
                 System.out.println("Вы что-то хотели сказать? Введите это здесь:");
+                connectionManager.setOnlineStatus(true);
                 // если соединение произошло и потоки успешно созданы - мы можем
                 //  работать дальше и предложить клиенту что то ввести
                 // если нет - вылетит исключение
@@ -105,6 +108,7 @@ public class SocketThread extends Thread{
                 delayedReconnect();
             } finally { // в любом случае необходимо закрыть сокет и потоки
                 System.out.println("Клиент был закрыт...");
+                connectionManager.setOnlineStatus(false);
                 if(clientSocket!=null && !clientSocket.isClosed()){
                     clientSocket.close();
 
@@ -141,6 +145,7 @@ public class SocketThread extends Thread{
     }
 
     private void reconnect() {
+        connectionManager.setOnlineStatus(false);
         Intent intent = new Intent("reconnect");
         // You can also include some extra data.
         intent.putExtra("message", "need to reconnect");

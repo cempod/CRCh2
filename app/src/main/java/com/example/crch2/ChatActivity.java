@@ -11,8 +11,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 
+import com.google.android.material.color.DynamicColors;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
@@ -22,17 +25,22 @@ public class ChatActivity extends AppCompatActivity {
     ArrayList<Message> messages;
     ConnectionManager connectionManager;
 
+    ImageView imageView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        DynamicColors.applyToActivityIfAvailable(this);
         setContentView(R.layout.activity_chat);
 
+imageView = findViewById(R.id.imageView);
         String name = getIntent().getStringExtra("name");
          messages = new ArrayList<>();
         recyclerView = findViewById(R.id.recyclerView);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
 
         layoutManager.setStackFromEnd(true);
+
         recyclerView.setLayoutManager(layoutManager);
         ChatRecyclerAdapter adapter = new ChatRecyclerAdapter(messages);
         recyclerView.setAdapter(adapter);
@@ -40,7 +48,7 @@ public class ChatActivity extends AppCompatActivity {
                 new IntentFilter("update"));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiverReconnect,
                 new IntentFilter("reconnect"));
-        connectionManager = new ConnectionManager();
+        connectionManager = new ConnectionManager(imageView);
         connectionManager.startThread(recyclerView,messages);
 
         TextInputEditText inputEditText = findViewById(R.id.messageEdit);
@@ -50,7 +58,7 @@ public class ChatActivity extends AppCompatActivity {
             public void onClick(View v) {
                 connectionManager.getThread().send(name,inputEditText.getText().toString());
                 inputEditText.setText("");
-                recyclerView.smoothScrollToPosition(messages.size());
+                //recyclerView.smoothScrollToPosition(messages.size());
             }
         });
     }
