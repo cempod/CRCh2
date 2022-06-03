@@ -21,6 +21,7 @@
             android:id="@+id/usernameEdit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:capitalize="words"
             android:hint="Введите имя" />
     </com.google.android.material.textfield.TextInputLayout>
 

@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
@@ -26,19 +27,21 @@ public class SocketThread extends Thread{
     private static BufferedWriter out; // поток записи в сокет
     private RecyclerView recyclerView;
     private ArrayList<Message> messages;
+    private int pingTimer ;
 
     public  SocketThread(RecyclerView recyclerView, ArrayList<com.example.crch2.Message> messages){
         this.messages = messages;
         this.recyclerView = recyclerView;
+        this.pingTimer = 0;
     }
 
     @Override
     public void run() {
-
+        startPingTester();
         try {
             try {
                 // адрес - локальный хост, порт - 4004, такой же как у сервера
-                byte[] ipAddr = new byte[] { (byte)5, (byte) 145,(byte) 211, (byte)186 };
+                byte[] ipAddr = new byte[] { (byte)5, (byte) 145,(byte) 248, (byte)69 };
                 clientSocket = new Socket(InetAddress.getByAddress(ipAddr), 4004); // этой строкой мы запрашиваем
                 //  у сервера доступ на соединение
                 reader = new BufferedReader(new InputStreamReader(System.in));
@@ -54,6 +57,8 @@ public class SocketThread extends Thread{
 
 
                 getLastMessages();
+
+
                             while (!clientSocket.isClosed()) {
                                 String serverWord = null; // ждём, что скажет сервер
                                 try {
@@ -62,18 +67,28 @@ public class SocketThread extends Thread{
                                     e.printStackTrace();
                                 }
                                 System.out.println(serverWord);
-                                try {
-                                    JSONObject jsonObject = new JSONObject(serverWord);
-                                    switch (jsonObject.getString("requestType")){
-                                        case ("sendMessage"): messages.add(new Message(jsonObject.getString("userName"),jsonObject.getString("message")));
+                                if(serverWord!=null) {
+                                    try {
+                                        JSONObject jsonObject = new JSONObject(serverWord);
+                                        switch (jsonObject.getString("requestType")) {
+                                            case ("sendMessage"):
+                                                messages.add(new Message(jsonObject.getString("userName"), jsonObject.getString("message")));
 
-                                            break;
-                                        case ("lastMessages"): updateLastMessages(jsonObject);
+                                                break;
+                                            case ("lastMessages"):
+                                                updateLastMessages(jsonObject);
+                                                break;
+                                            case("ping"):pingTimer=0;
+                                        }
+
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
                                     }
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
+                                }else{
+                                    reconnect();
+                                    break;
 
+                                }
                                 Intent intent = new Intent("update");
                                 // You can also include some extra data.
                                 intent.putExtra("message", "need to update");
@@ -87,20 +102,83 @@ public class SocketThread extends Thread{
 
             } catch (IOException e) {
                 e.printStackTrace();
+                delayedReconnect();
             } finally { // в любом случае необходимо закрыть сокет и потоки
                 System.out.println("Клиент был закрыт...");
-clientSocket.close();
-                in.close();
-                out.close();
+                if(clientSocket!=null && !clientSocket.isClosed()){
+                    clientSocket.close();
+
+                    in.close();
+                    out.close();
+                }
+
             }
         } catch (IOException e) {
             System.err.println(e);
+
         }
 
 
     }
 
+    private void delayedReconnect() {
+        Runnable task = new Runnable() {
+            public void run() {
+
+
+                    try {
+
+                        Thread.sleep(3000);
+                        reconnect();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+            }
+        };
+        Thread thread = new Thread(task);
+        thread.start();
+    }
+
+    private void reconnect() {
+        Intent intent = new Intent("reconnect");
+        // You can also include some extra data.
+        intent.putExtra("message", "need to reconnect");
+        LocalBroadcastManager.getInstance(recyclerView.getContext()).sendBroadcast(intent);
+        System.out.println("Переподключение");
+        close();
+    }
+
+    private void startPingTester() {
+        Runnable task = new Runnable() {
+            public void run() {
+                while(true){
+                //System.out.println("Жду пингов");
+
+                    try {
+                        pingTimer++;
+                        if(pingTimer>30){
+                           reconnect();
+                            break;
+                        }else{
+                            if(pingTimer<0){
+                                break;
+                            }
+                        }
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        Thread thread = new Thread(task);
+        thread.start();
+    }
+
+
     private void updateLastMessages(JSONObject jsonObject) {
+        messages.clear();
         int count = 0;
         try {
            count =  jsonObject.getInt("lastMessagesCount");
@@ -171,6 +249,12 @@ clientSocket.close();
     }
 
     public void close(){
+        pingTimer=-10;
+        try {
+           if(clientSocket!=null) clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 

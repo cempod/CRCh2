@@ -20,7 +20,8 @@ import java.util.ArrayList;
 public class ChatActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     ArrayList<Message> messages;
-    SocketThread thread;
+    ConnectionManager connectionManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,21 +38,23 @@ public class ChatActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver,
                 new IntentFilter("update"));
-        thread = new SocketThread(recyclerView,messages);
-        thread.start();
+        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiverReconnect,
+                new IntentFilter("reconnect"));
+        connectionManager = new ConnectionManager();
+        connectionManager.startThread(recyclerView,messages);
 
         TextInputEditText inputEditText = findViewById(R.id.messageEdit);
         FloatingActionButton floatingActionButton = findViewById(R.id.floatingActionButton);
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                thread.send(name,inputEditText.getText().toString());
+                connectionManager.getThread().send(name,inputEditText.getText().toString());
                 inputEditText.setText("");
                 recyclerView.smoothScrollToPosition(messages.size());
             }
         });
     }
-    private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
@@ -62,12 +65,24 @@ public class ChatActivity extends AppCompatActivity {
 
         }
     };
+    private final BroadcastReceiver mMessageReceiverReconnect = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Get extra data included in the Intent
+            String message = intent.getStringExtra("message");
+            // Log.d("receiver", "Got message: " + message);
+          //  thread = new SocketThread(recyclerView,messages);
+           // thread.start();
+            connectionManager.reconnect();
+        }
+    };
 
     @Override
     protected void onDestroy() {
         // Unregister since the activity is about to be closed.
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
-        thread.close();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiverReconnect);
+        connectionManager.disconnect();
         super.onDestroy();
     }
 }
