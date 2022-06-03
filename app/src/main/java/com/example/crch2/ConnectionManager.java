@@ -44,10 +44,11 @@ this.imageView = imageView;
 
     public void setOnlineStatus(Boolean status){
 if(status == true){
-
+    //circularProgressIndicator.setProgress(100);
+    //circularProgressIndicator.setIndeterminate(false);
     imageView.setImageResource(R.drawable.ok);
 }else{
-
+   // circularProgressIndicator.setIndeterminate(true);
     imageView.setImageResource(R.drawable.error);
 }
     }
