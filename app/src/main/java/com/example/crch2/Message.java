@@ -5,6 +5,7 @@ package com.example.crch2;
 public class Message {
     private final String userName;
     private final String message;
+    private int type;
 
     public Message(String name, String message){
         this.userName = name;
