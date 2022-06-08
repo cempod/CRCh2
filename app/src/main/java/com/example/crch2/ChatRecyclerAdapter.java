@@ -26,18 +26,42 @@ public class ChatRecyclerAdapter extends RecyclerView.Adapter {
             userNameText = itemView.findViewById(R.id.userNameText);
         }
     }
+    class StatusViewHolder extends RecyclerView.ViewHolder {
+        TextView statusText;
+        TextView userNameText;
+        public StatusViewHolder(@NonNull View itemView) {
+            super(itemView);
+           statusText = itemView.findViewById(R.id.userStatusText);
+            userNameText = itemView.findViewById(R.id.userNameText);
+        }
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return messages.get(position).getType();
+    }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if(viewType==0){
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.message_card,parent,false);
-        return new ViewHolder(view);
+        return new ViewHolder(view);}
+        else{
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.status_card,parent,false);
+            return new StatusViewHolder(view);
+        }
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        ((ViewHolder)holder).messageText.setText(messages.get(position).getMessage());
-        ((ViewHolder)holder).userNameText.setText(messages.get(position).getUserName());
+        if(holder instanceof ViewHolder) {
+            ((ViewHolder) holder).messageText.setText(messages.get(position).getMessage());
+            ((ViewHolder) holder).userNameText.setText(messages.get(position).getUserName());
+        }else{
+            ((StatusViewHolder) holder).statusText.setText(messages.get(position).getMessage());
+            ((StatusViewHolder) holder).userNameText.setText(messages.get(position).getUserName());
+        }
     }
 
     @Override

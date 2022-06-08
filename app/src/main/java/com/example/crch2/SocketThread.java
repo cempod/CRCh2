@@ -86,11 +86,11 @@ public class SocketThread extends Thread{
                                             case("ping"):pingTimer=0;
                                             break;
                                             case("sendOnline"):
-                                                messages.add(new Message(jsonObject.getString("userName"), "В сети"));
+                                                messages.add(new Message(jsonObject.getString("userName"), "В сети",1));
 
                                                 break;
                                             case("sendOffline"):
-                                                messages.add(new Message(jsonObject.getString("userName"), "Не в сети"));
+                                                messages.add(new Message(jsonObject.getString("userName"), "Не в сети",1));
                                                 break;
                                         }
 
