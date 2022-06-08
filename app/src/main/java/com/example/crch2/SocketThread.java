@@ -29,12 +29,14 @@ public class SocketThread extends Thread{
     private ArrayList<Message> messages;
     private int pingTimer ;
     private ConnectionManager connectionManager;
+    private String name;
 
-    public  SocketThread(RecyclerView recyclerView, ArrayList<com.example.crch2.Message> messages, ConnectionManager connectionManager){
+    public  SocketThread(RecyclerView recyclerView, ArrayList<com.example.crch2.Message> messages, ConnectionManager connectionManager, String name){
         this.messages = messages;
         this.recyclerView = recyclerView;
         this.pingTimer = 0;
         this.connectionManager = connectionManager;
+        this.name = name;
     }
 
     @Override
@@ -43,7 +45,7 @@ public class SocketThread extends Thread{
         try {
             try {
                 // адрес - локальный хост, порт - 4004, такой же как у сервера
-                byte[] ipAddr = new byte[] { (byte)5, (byte) 145,(byte) 248, (byte)69 };
+                byte[] ipAddr = new byte[] { (byte)5, (byte) 145,(byte) 195, (byte)121};
                 clientSocket = new Socket(InetAddress.getByAddress(ipAddr), 4004); // этой строкой мы запрашиваем
                 //  у сервера доступ на соединение
                 reader = new BufferedReader(new InputStreamReader(System.in));
@@ -82,6 +84,14 @@ public class SocketThread extends Thread{
                                                 updateLastMessages(jsonObject);
                                                 break;
                                             case("ping"):pingTimer=0;
+                                            break;
+                                            case("sendOnline"):
+                                                messages.add(new Message(jsonObject.getString("userName"), "В сети"));
+
+                                                break;
+                                            case("sendOffline"):
+                                                messages.add(new Message(jsonObject.getString("userName"), "Не в сети"));
+                                                break;
                                         }
 
                                     } catch (JSONException e) {
@@ -206,7 +216,7 @@ public class SocketThread extends Thread{
     }
 
 
-    public void send(String name,String message) {
+    public void send(String message) {
         Runnable task = new Runnable() {
             public void run() {
                 try {
@@ -238,6 +248,7 @@ public class SocketThread extends Thread{
                     try {
                         jsonObject.put("requestType","getLastMessages");
                         jsonObject.put("count",100);
+                        jsonObject.put("name",name);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }

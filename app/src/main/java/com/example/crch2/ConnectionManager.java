@@ -14,17 +14,18 @@ public class ConnectionManager {
    private SocketThread thread;
    private RecyclerView recyclerView;
    private ArrayList<Message> messages;
+   private String name;
 
 private ImageView imageView;
-    public ConnectionManager(ImageView imageView){
-
+    public ConnectionManager(ImageView imageView, String name){
+this.name = name;
 this.imageView = imageView;
     }
 
     public void startThread(RecyclerView recyclerView, ArrayList<Message> messages){
         this.recyclerView = recyclerView;
         this.messages = messages;
-        this.thread = new SocketThread(recyclerView,messages, this);
+        this.thread = new SocketThread(recyclerView,messages, this, name);
         this.thread.start();
     }
 
@@ -38,7 +39,7 @@ this.imageView = imageView;
 
     public void reconnect(){
         disconnect();
-        this.thread = new SocketThread(recyclerView,messages, this);
+        this.thread = new SocketThread(recyclerView,messages, this, name);
         this.thread.start();
     }
 

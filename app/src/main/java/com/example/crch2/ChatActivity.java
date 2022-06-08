@@ -48,7 +48,7 @@ imageView = findViewById(R.id.imageView);
                 new IntentFilter("update"));
         LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiverReconnect,
                 new IntentFilter("reconnect"));
-        connectionManager = new ConnectionManager(imageView);
+        connectionManager = new ConnectionManager(imageView, name);
         connectionManager.startThread(recyclerView,messages);
 
         TextInputEditText inputEditText = findViewById(R.id.messageEdit);
@@ -56,7 +56,7 @@ imageView = findViewById(R.id.imageView);
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                connectionManager.getThread().send(name,inputEditText.getText().toString());
+                connectionManager.getThread().send(inputEditText.getText().toString());
                 inputEditText.setText("");
                 //recyclerView.smoothScrollToPosition(messages.size());
             }
