@@ -45,7 +45,8 @@ public class SocketThread extends Thread{
         try {
             try {
                 // адрес - локальный хост, порт - 4004, такой же как у сервера
-                byte[] ipAddr = new byte[] { (byte)5, (byte) 145,(byte) 195, (byte)121};
+               // byte[] ipAddr = new byte[] { (byte)5, (byte) 145,(byte) 195, (byte)121};
+                byte[] ipAddr = new byte[] { (byte)5, (byte) 180,(byte) 136, (byte)188};
                 clientSocket = new Socket(InetAddress.getByAddress(ipAddr), 4004); // этой строкой мы запрашиваем
                 //  у сервера доступ на соединение
                 reader = new BufferedReader(new InputStreamReader(System.in));
